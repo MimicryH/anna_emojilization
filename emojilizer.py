@@ -143,6 +143,8 @@ class Emojilizer():
             dict[short_sentences[i]] = new_emoji[i]
         print(dict)
         f = inserting.insert_dic(dict)
+        if type(self.speechEmoVec) == type(None):
+            self.speechEmoVec = array([[0, 0]])
         result = {"e_text": f, "text": short_sentences, "emoji_list": new_emoji, "vec_text": self.textEmoVec, "vec_speech": self.speechEmoVec.tolist(), "vec_fu_list": self.fuVecList,"raw_text": self.rawText}
         return result
 
@@ -176,8 +178,8 @@ def emojilizationService():
     e = Emojilizer()
     print('Emojilizer is ready')
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = '192.168.1.171'  # 获取本地主机名
-    port = 8000  # 设置端口
+    host = '192.168.1.29'  # 获取本地主机名
+    port = 12345  # 设置端口
     s.bind((host, port))  # 绑定端口
     s.listen(5)  # 等待客户端连接
     while True:
@@ -207,6 +209,7 @@ def emojilizationService():
             r = json.dumps(r)
             r = str.encode(r)
             print(len(r), r)
+            print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             conn.send(struct.pack(b'l', len(r)))
             conn.sendall(r)
             time.sleep(2)

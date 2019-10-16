@@ -1,8 +1,8 @@
 import json
 import re
 import os.path
-from emojilization.deepmoji.sentence_tokenizer import SentenceTokenizer
-from emojilization.deepmoji.model_def import deepmoji_emojis
+from deepmoji.sentence_tokenizer import SentenceTokenizer
+from deepmoji.model_def import deepmoji_emojis
 from . import translate
 # import translate
 import numpy as np
