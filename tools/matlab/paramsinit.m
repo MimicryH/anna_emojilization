@@ -24,7 +24,7 @@ addpath('D:\DoobiePJ\navi/MatConvNet/matconvnet-1.0-beta25/matlab/+dagnn')
 addpath('D:\DoobiePJ\navi/MatConvNet/matconvnet-1.0-beta25/matlab/+dagnn/@DagNN/')
 addpath('D:\DoobiePJ\navi/MatConvNet/matconvnet-1.0-beta25/contrib/mcnExtraLayers/matlab/')
 %}
-addpath(genpath('D:\DoobiePJ\navi\MatConvNet\matconvnet-1.0-beta25'))
+addpath(genpath('E:\DoobiePJ\doobieBot\MatConvNet\matconvnet-1.0-beta25'))
 %django
 
 %mex -setup cpp
