@@ -61,14 +61,14 @@ class SERMatlab():
             return ("angry", self.angry)
         elif np.linalg.norm(lb - self.preset6) == 0.:
             # print("语音情感为seemhappy", self.happy)
-            return ("seemhappy", self.happy)
+            return ("seemhappy", self.happy * 0.5)
         elif np.linalg.norm(lb - self.preset7) == 0.:
             emotion = 0.5 * self.neutral + 0.5 * self.sad
             # print("语音情感为neutral+sad", emotion)
             return ("seememotion", emotion)
         elif np.linalg.norm(lb - self.preset8) == 0.:
             # print("语音情感为seemsad", self.sad)
-            return ("seemsad", self.sad)
+            return ("seemsad", self.sad * 0.5)
         # elif np.linalg.norm(lb-preset9)==0.:
         #    print("语音情感为seemangry", angry)
         #    return ("seemangry",angry)

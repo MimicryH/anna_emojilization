@@ -1,9 +1,9 @@
 import json
 import re
 import os.path
-from emojilization.deepmoji.sentence_tokenizer import SentenceTokenizer
-from emojilization.deepmoji.model_def import deepmoji_emojis
-from . import translate
+from deepmoji.sentence_tokenizer import SentenceTokenizer
+from deepmoji.model_def import deepmoji_emojis
+from tools.translate import google_translate
 # import translate
 import numpy as np
 
@@ -30,6 +30,7 @@ class TERDeepMoji():
         global model
         model = deepmoji_emojis(maxlen, self.modelprepath)
         model.summary()
+
     # 1 for Chinese  2 for English
     def split(self, text, mode='en'):
         pattern = r',|\.|/|;|`|\[|\]|<|>|\？|\?|:|"|\{|\}|\~|!|@|#|\$|%|\^|&|\(|\)|-|=|\_|\+|，|。|、|；|‘|’|【|】|·|！|…|（|）'
@@ -59,7 +60,7 @@ class TERDeepMoji():
     def textEmo(self, text):
         pattern = r'\(|\)|（|）'
         text = re.sub(pattern, '，', text)
-        tra = translate.baidu_translate(text)
+        tra = google_translate(text)
         print(text)
         print("tra")
         print(tra)
@@ -82,10 +83,10 @@ class TERDeepMoji():
             t_score.extend([t_prob[ind] for ind in ind_top])
             scores.append(t_score)
             emosequence.append(t_score[2])  # 获取每个短句预测出来的概率最大的emoji
-            # print(t_score)
+            print(t_score)
         return emosequence, TEST_SENTENCES_CHI
 
 if __name__ == '__main__':
     ter = TERDeepMoji()
-    emojilist, short_sentences = ter.textEmo("您就是一只浪味仙，夸!")
+    emojilist, short_sentences = ter.textEmo("不要这样")
     print(emojilist, short_sentences)

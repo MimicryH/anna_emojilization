@@ -12,7 +12,12 @@ from tools.SER_matlab import SERMatlab
 from tools.TER_deepmoji import TERDeepMoji
 from tools import inserting
 import json
-WEIGHT_SPEECH = 30
+from data.visual_map import ScatterDebugger
+
+WEIGHT_SPEECH = 5
+
+SEMANTIC_EMOJI = [6, 13, 14, 17, 21, 33, 36, 38, 40, 42, 56]
+EXLUSIVE_EMOJI = [11, 48]
 
 
 class Emojilizer():
@@ -25,9 +30,11 @@ class Emojilizer():
         self.asr = ASR_Xunfei()
         # self.tool_baidu = Tool_Baidu()
         self.speechEmoVec = None
+        self.textEmojiList = []
         self.textEmoVec = []
         self.fuVecList = []
         self.rawText = None
+        self.debugger = ScatterDebugger()
 
     def speechEmo(self, wavpath):
         return self.ser.speechEmo(wavpath)
@@ -57,44 +64,57 @@ class Emojilizer():
         #print(emoji_coordinate)
         return emoji_coordinate
 
+    def fuse(self, emojilist, emotiontuple):
+        if emotiontuple[0] in ["happy", "sad", "surprise", "angry"]:
+            w1_audio = 10  # 语音通道的融合权值
+        elif emotiontuple[0] == "neutral":
+            w1_audio = 10 * np.random.rand()
+        elif emotiontuple[0] in ["seemhappy", "seemsad", "seemtmotion", "seemangry"]:
+            w1_audio = 4  # 语音通道的融合权值
+        elif emotiontuple[0] == "emotion2":
+            w1_audio = 5
+        else:
+            w1_audio = 1
+        w1_text = 1  # 文本通道的融合权值
+        w2_audio = WEIGHT_SPEECH  # 语音通道的扩展权值
+        w1_audio = w1_audio * w2_audio
+        w2_text = 1.8  # 文本通道权值
+        # emotion = np.power(emotiontuple[1], 3)  # 先将语音通道算出的情感坐标先过x3后再线性扩展
+        emotion = emotiontuple[1]
+        vectorList = []
+        for i in range(len(emojilist)):
+            t_emoji = self.emoji_coordinate[emojilist[i]]  # emoji的二维坐标
+            self.textEmoVec.append(t_emoji)
+            # print("纯文本的情感向量坐标", t_emoji)
+            self.debugger.plot_text(t_emoji[0], t_emoji[1])
+            if emojilist[i] in SEMANTIC_EMOJI:
+                vectorList.append(t_emoji)
+            else:
+                t_emoji = t_emoji * w2_text  # 将纯文本通道的情感坐标进行扩展
+                vector = (t_emoji * w1_text + emotion * w1_audio) / (
+                        w1_text + w1_audio)  # 将纯文本通道的坐标与语音通道的坐标做加权平均得到融合后的情感坐标：vector
+                self.debugger.plot_fused(vector[0], vector[1])
+                vectorList.append(vector)
+        return vectorList
+
     def getEmotionVecList(self, wavepath):
         text = self.asr.getTextOf(wavepath)
         # text = self.tool_baidu.asr(wavepath)
         if text == "你说啥，我没听清。":
             return False
         else:
-            emojilist, short_sentences = self.deepmoji(text)
+            self.textEmojiList, short_sentences = self.deepmoji(text)
             emotiontuple = self.speechEmo(wavepath)
             self.speechEmoVec = emotiontuple[1]
-            if emotiontuple[0] in ["happy", "sad", "surprise", "angry"]:
-                w1_audio = 10  # 语音通道的融合权值
-            elif emotiontuple[0] == "neutral":
-                w1_audio = 10 * np.random.rand()
-            elif emotiontuple[0] in ["seemhappy", "seemsad", "seemtmotion", "seemangry"]:
-                w1_audio = 4  # 语音通道的融合权值
-            elif emotiontuple[0] == "emotion2":
-                w1_audio = 5
-            else:
-                w1_audio = 1
-            w1_text = 1  # 文本通道的融合权值
-            w2_audio = WEIGHT_SPEECH  # 语音通道的扩展权值
-            w1_audio = w1_audio * w2_audio
-            w2_text = 1.8  # 文本通道权值
-            emotion = np.power(emotiontuple[1], 3)# 先将语音通道算出的情感坐标先过x3后再线性扩展
-            vectorList = []
-            for i in range(len(emojilist)):
-                t_emoji = self.emoji_coordinate[emojilist[i]]  # emoji的二维坐标
-                # print("纯文本的情感向量坐标", t_emoji)
-                t_emoji = t_emoji * w2_text  # 将纯文本通道的情感坐标进行扩展
-                vector = (t_emoji * w1_text + emotion * w1_audio) / (
-                            w1_text + w1_audio)  # 将纯文本通道的坐标与语音通道的坐标做加权平均得到融合后的情感坐标：vector
-                vectorList.append(vector)
+            vectorList = self.fuse(self.textEmojiList, emotiontuple)
             return vectorList, short_sentences
 
-    def getEmojiList(self, wavepath):
+    def getEmojiList(self, wavepath, text):
         self.textEmoVec = []
         self.fuVecList = []
-        text = self.asr.getTextOf(wavepath)
+        if text == "":
+            print("asr starts")
+            text = self.asr.getTextOf(wavepath)
         # text = self.tool_baidu.asr(wavepath)
         self.rawText = text
         print("self.rawText = ", text)
@@ -104,38 +124,20 @@ class Emojilizer():
             emojilist, short_sentences = self.deepmoji(text)
             emotiontuple = self.speechEmo(wavepath)
             self.speechEmoVec = emotiontuple[1]
-            if emotiontuple[0] in ["happy", "sad", "surprise", "angry"]:
-                w1_audio = 10  # 语音通道的融合权值
-            elif emotiontuple[0] == "neutral":
-                w1_audio = 10 * np.random.rand()
-            elif emotiontuple[0] in ["seemhappy", "seemsad", "seemtmotion", "seemangry"]:
-                w1_audio = 4  # 语音通道的融合权值
-            elif emotiontuple[0] == "emotion2":
-                w1_audio = 5
-            else:
-                w1_audio = 1
-            w1_text = 1  # 文本通道的融合权值
-            w2_audio = WEIGHT_SPEECH  # 语音通道的扩展权值
-            w1_audio *= w2_audio
-            w2_text = 1.8  # 文本通道权值
-            new_emoji = []  # 空list准备存模态融合之后给文本加上的emojiw_emotion#
-            emotion = np.power(emotiontuple[1], 3)  # 先将语音通道算出的情感坐标先过x3后再线性扩展
+            vectorList = self.fuse(emojilist, emotiontuple)
+            self.fuVecList = vectorList
+            new_emoji = []
             for i in range(len(emojilist)):
-                t_emoji = self.emoji_coordinate[emojilist[i]]  # emoji的二维坐标
-                # print("纯文本的情感向量坐标", t_emoji)
-                self.textEmoVec.append(t_emoji.tolist())
-                t_emoji = t_emoji * w2_text  # 将纯文本通道的情感坐标进行扩展
-                vector = (t_emoji * w1_text + emotion * w1_audio) / (w1_text + w1_audio)  # 将纯文本通道的坐标与语音通道的坐标做加权平均得到融合后的情感坐标：vector
-                self.fuVecList.append(vector.tolist())
-                # print("多模态后的情感向量坐标值", vector)
                 dist = np.sqrt(
-                    np.sum(np.square(vector - self.emoji_coordinate), axis=1, keepdims=True))  # 将融合后的情感坐标对64个emoji的坐标求欧式距离
+                    np.sum(np.square(vectorList[i] - self.emoji_coordinate), axis=1, keepdims=True))  # 将融合后的情感坐标对64个emoji的坐标求欧式距离
                 temp = np.where(dist == np.min(dist))  # 找出最近邻的emoji对应的坐标
-                new_emoji.append(int(temp[0][0]))  # 将每一个短句对应的新的emoji写入new_emoji中
+                temp = int(temp[0][0])
+                if not temp in EXLUSIVE_EMOJI:
+                    new_emoji.append(temp)  # 将每一个短句对应的新的emoji写入new_emoji中
             return new_emoji, short_sentences
 
-    def emojilize(self, wavepath):
-        new_emoji, short_sentences = self.getEmojiList(wavepath)
+    def emojilize(self, wavepath, text=""):
+        new_emoji, short_sentences = self.getEmojiList(wavepath, text)
         dict = {}
         length = len(new_emoji) if len(new_emoji) < len(short_sentences) else len(short_sentences)
         for i in range(length):
@@ -176,11 +178,12 @@ def emojilizationService():
     e = Emojilizer()
     print('Emojilizer is ready')
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = '192.168.1.171'  # 获取本地主机名
-    port = 8000  # 设置端口
+    host = 'localhost'  # 获取本地主机名
+    port = 12345  # 设置端口
     s.bind((host, port))  # 绑定端口
     s.listen(5)  # 等待客户端连接
     while True:
+        print('Waiting for connection...')
         conn, addr = s.accept()     # 建立客户端连接
         with conn:
             print("socket 连接成功! ", addr)
@@ -262,6 +265,9 @@ def add_huikua_emoji_list():
     emojilized_huikua_DF.to_excel("emojilized_huikua.xlsx", index=False, encoding='utf8')
 
 if __name__ == '__main__':
-    emojilizationService()
+    # emojilizationService()
+    e = Emojilizer()
+    print(e.emojilize('to_do_list/0.wav'))
+    e.debugger.show()
     # gen_huikua_emojis()
     # add_huikua_emoji_list()

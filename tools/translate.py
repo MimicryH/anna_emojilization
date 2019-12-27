@@ -3,6 +3,7 @@ import hashlib
 import json
 import urllib
 import random
+from googletrans import Translator
 
 def baidu_translate(content):
     appid = '20180731000190435'
@@ -19,22 +20,27 @@ def baidu_translate(content):
         q) + '&from=' + fromLang + '&to=' + toLang + '&salt=' + str(
         salt) + '&sign=' + sign
 
-    try:
-        httpClient = http.client.HTTPConnection('api.fanyi.baidu.com')
-        httpClient.request('GET', myurl)
-        # response是HTTPResponse对象
-        response = httpClient.getresponse()
-        jsonResponse = response.read().decode("utf-8")  # 获得返回的结果，结果为json格式
-        js = json.loads(jsonResponse)  # 将json格式的结果转换字典结构
-        dst = str(js["trans_result"][0]["dst"])  # 取得翻译后的文本结果
-        print("translated: ", dst)  # 打印结果
-        return dst
-    except Exception as e:
-        print(e)
-    finally:
-        if httpClient:
-            httpClient.close()
+    # try:
+    httpClient = http.client.HTTPConnection('api.fanyi.baidu.com')
+    httpClient.request('GET', myurl)
+    # response是HTTPResponse对象
+    response = httpClient.getresponse()
+    jsonResponse = response.read().decode("utf-8")  # 获得返回的结果，结果为json格式
+    js = json.loads(jsonResponse)  # 将json格式的结果转换字典结构
+    print(js)
+    dst = str(js["trans_result"][0]["dst"])  # 取得翻译后的文本结果
+    print("translated: ", dst)  # 打印结果
+    return dst
+    # except Exception as e:
+    #     print(e)
+    # finally:
+    if httpClient:
+        httpClient.close()
 
+
+def google_translate(content):
+    translator = Translator(service_urls=['translate.google.cn'])
+    return translator.translate(content, src='zh-cn', dest='en').text
 
 if __name__ == '__main__':
     while True:
@@ -42,5 +48,5 @@ if __name__ == '__main__':
         content = input()
         if (content == 'q'):
             break
-        tra=baidu_translate(content)
+        tra = baidu_translate(content)
         print(tra)
