@@ -8,9 +8,8 @@ import struct
 
 from tools.asr_xunfei import ASR_Xunfei
 # from tools.tool_baidu import Tool_Baidu
-from tools.SER_matlab import SERMatlab
 from tools.TER_deepmoji import TERDeepMoji
-from tools import inserting
+from tools import inserting, emotion_detection
 import json
 from data.visual_map import ScatterDebugger
 
@@ -25,7 +24,6 @@ class Emojilizer():
         basedir = os.path.dirname(os.path.abspath(__file__))
         tabledir = os.path.join(basedir, 'data/emoji_coordinate2.000.xls')
         self.emoji_coordinate = self.readexcel(tabledir)
-        self.ser = SERMatlab()
         self.ter = TERDeepMoji()
         self.asr = ASR_Xunfei()
         # self.tool_baidu = Tool_Baidu()
@@ -37,7 +35,7 @@ class Emojilizer():
         self.debugger = ScatterDebugger()
 
     def speechEmo(self, wavpath):
-        return self.ser.speechEmo(wavpath)
+        return emotion_detection(wavpath)
 
     def deepmoji(self, text):
         return self.ter.textEmo(text)
@@ -64,23 +62,10 @@ class Emojilizer():
         #print(emoji_coordinate)
         return emoji_coordinate
 
-    def fuse(self, emojilist, emotiontuple):
-        if emotiontuple[0] in ["happy", "sad", "surprise", "angry"]:
-            w1_audio = 10  # 语音通道的融合权值
-        elif emotiontuple[0] == "neutral":
-            w1_audio = 10 * np.random.rand()
-        elif emotiontuple[0] in ["seemhappy", "seemsad", "seemtmotion", "seemangry"]:
-            w1_audio = 4  # 语音通道的融合权值
-        elif emotiontuple[0] == "emotion2":
-            w1_audio = 5
-        else:
-            w1_audio = 1
-        w1_text = 1  # 文本通道的融合权值
-        w2_audio = WEIGHT_SPEECH  # 语音通道的扩展权值
-        w1_audio = w1_audio * w2_audio
-        w2_text = 1.8  # 文本通道权值
-        # emotion = np.power(emotiontuple[1], 3)  # 先将语音通道算出的情感坐标先过x3后再线性扩展
-        emotion = emotiontuple[1]
+    def fuse(self, emojilist, ser_result):
+        w1_text = 1
+        w1_audio = 1
+        emotion = [0.5, 0] * ser_result[0] + [-1, 1] * ser_result[1] + [-1, -1] * ser_result[2] + [1, 1] * ser_result[3]
         vectorList = []
         for i in range(len(emojilist)):
             t_emoji = self.emoji_coordinate[emojilist[i]]  # emoji的二维坐标
@@ -90,7 +75,6 @@ class Emojilizer():
             if emojilist[i] in SEMANTIC_EMOJI:
                 vectorList.append(t_emoji)
             else:
-                t_emoji = t_emoji * w2_text  # 将纯文本通道的情感坐标进行扩展
                 vector = (t_emoji * w1_text + emotion * w1_audio) / (
                         w1_text + w1_audio)  # 将纯文本通道的坐标与语音通道的坐标做加权平均得到融合后的情感坐标：vector
                 self.debugger.plot_fused(vector[0], vector[1])

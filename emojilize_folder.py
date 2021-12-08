@@ -5,8 +5,8 @@ import os
 import time
 
 basedir = os.path.dirname(os.path.abspath(__file__))
-tabledir = os.path.join(basedir, 'xlsx/zhaojing1.xlsx')
-df = pd.read_excel(tabledir, "Sheet1")
+tabledir = os.path.join(basedir, 'xlsx/总表3.xlsx')
+df = pd.read_excel(tabledir, "总表-赵静")
 text_list = df["文本"]
 emo_text_list = []
 text_v = []
@@ -25,7 +25,7 @@ for index, text in enumerate(text_list):
     print("to_do_list/" + str(index) + ".wav", text)
     emojilization = emojilizer.emojilize("to_do_list/" + str(index) + ".wav", text)
     print(emojilization)
-    emojilizer.debugger.show()
+    # emojilizer.debugger.show()
     emo_text_list.append(emojilization['e_text'])
     list_v = []
     list_a = []
@@ -56,9 +56,3 @@ df = pd.DataFrame({'emo_text':emo_text_list, 'text_v':text_v, 'text_a':text_a, '
 # df['fusion_a'] = fusion_a
 
 df.to_csv("result1.csv")
-
-
-
-
-
-

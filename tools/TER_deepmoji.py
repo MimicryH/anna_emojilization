@@ -3,7 +3,7 @@ import re
 import os.path
 from deepmoji.sentence_tokenizer import SentenceTokenizer
 from deepmoji.model_def import deepmoji_emojis
-from tools.translate import google_translate
+from tools.translate import baidu_translate
 # import translate
 import numpy as np
 
@@ -60,7 +60,7 @@ class TERDeepMoji():
     def textEmo(self, text):
         pattern = r'\(|\)|（|）'
         text = re.sub(pattern, '，', text)
-        tra = google_translate(text)
+        tra = baidu_translate(text)
         print(text)
         print("tra")
         print(tra)

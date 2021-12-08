@@ -48,5 +48,5 @@ if __name__ == '__main__':
         content = input()
         if (content == 'q'):
             break
-        tra = baidu_translate(content)
+        tra = google_translate(content)
         print(tra)
